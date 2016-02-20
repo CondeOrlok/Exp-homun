@@ -2032,6 +2032,8 @@ sub cmdFriend {
 }
 
 sub cmdSlave {
+
+
 	my ($cmd, $subcmd) = @_;
 	my @args = parseArgs($subcmd);
 
@@ -2049,7 +2051,57 @@ sub cmdSlave {
 		error T("Error: Unknown command in cmdSlave\n");
 	}
 	my $string = $cmd;
+	my (undef, $args) = @_;
+	my $knownArg;
 
+	# exp report
+	my ($arg1) = $args =~ /^\d+$/;
+
+if (($args eq "") || ($args eq "report")) {
+		$knownArg = 1;
+		my ($endTime_EXP, $w_sec, $bExpPerHour, $jExpPerHour, $EstB_sec, $percentB, $percentJ, $zenyMade, $zenyPerHour, $EstJ_sec, $percentJhr, $percentBhr);
+		$endTime_EXP = time;
+		$w_sec = int($endTime_EXP - $startTime_EXP);
+		if ($w_sec > 0) {
+			$zenyMade = $char->{zeny} - $startingzeny;
+			$bExpPerHour = int($totalBaseExp / $w_sec * 3600);
+			$jExpPerHour = int($totalJobExp / $w_sec * 3600);
+			$zenyPerHour = int($zenyMade / $w_sec * 3600);
+			if ($char->{exp_max} && $bExpPerHour){
+				$percentB = "(".sprintf("%.2f",$totalBaseExp * 100 / $char->{exp_max})."%)";
+				$percentBhr = "(".sprintf("%.2f",$bExpPerHour * 100 / $char->{exp_max})."%)";
+				$EstB_sec = int(($char->{exp_max} - $char->{exp})/($bExpPerHour/3600));
+			}
+			if ($char->{exp_job_max} && $jExpPerHour){
+				$percentJ = "(".sprintf("%.2f",$totalJobExp * 100 / $char->{exp_job_max})."%)";
+				$percentJhr = "(".sprintf("%.2f",$jExpPerHour * 100 / $char->{exp_job_max})."%)";
+				$EstJ_sec = int(($char->{'exp_job_max'} - $char->{exp_job})/($jExpPerHour/3600));
+			}
+		}
+		$char->{deathCount} = 0 if (!defined $char->{deathCount});
+		message TF( "------------Exp Report------------\n" .
+					"Botting time : %s\n" .
+					"BaseExp      : %s %s\n" .
+					"JobExp       : %s %s\n" .
+					"BaseExp/Hour : %s %s\n" .
+					"JobExp/Hour  : %s %s\n" .
+					"zeny         : %s\n" .
+					"zeny/Hour    : %s\n" .
+					"Base Levelup Time Estimation : %s\n" .
+					"Job Levelup Time Estimation  : %s\n" .
+					"Died : %s\n" .
+					"Bytes Sent   : %s\n" .
+					"Bytes Rcvd   : %s\n",
+			timeConvert($w_sec), formatNumber($totalBaseExp), $percentB, formatNumber($totalJobExp), $percentJ,
+			formatNumber($bExpPerHour), $percentBhr, formatNumber($jExpPerHour), $percentJhr,
+			formatNumber($zenyMade), formatNumber($zenyPerHour), timeConvert($EstB_sec), timeConvert($EstJ_sec),
+			$char->{'deathCount'}, formatNumber($bytesSent), $packetParser && formatNumber($packetParser->{bytesProcessed})), "info";
+
+		if ($args eq "") {
+			message("---------------------------------\n", "list");
+		}
+	}
+	
 	if (
 		!$slave || !$slave->{appear_time} || (
 			$slave->{actorType} eq 'Homunculus' and $slave->{state} & 2 || $slave->{state} & 4
@@ -2306,57 +2358,6 @@ sub cmdSlave {
 		error TF("Usage: %s <feed | s | status | move | standby | ai | aiv | skills | delete | rename>\n", $string);
 	}
 }
-
-	my (undef, $args[1]) = @_;
-	my $knownArg;
-
-	# exp report
-	my ($arg1) = $args[1] =~ /^(\w+)/;
-
-if (($args[1] eq "") || ($args[1] eq "report")) {
-		$knownArg = 1;
-		my ($endTime_EXP, $w_sec, $bExpPerHour, $jExpPerHour, $EstB_sec, $percentB, $percentJ, $zenyMade, $zenyPerHour, $EstJ_sec, $percentJhr, $percentBhr);
-		$endTime_EXP = time;
-		$w_sec = int($endTime_EXP - $startTime_EXP);
-		if ($w_sec > 0) {
-			$zenyMade = $char->{zeny} - $startingzeny;
-			$bExpPerHour = int($totalBaseExp / $w_sec * 3600);
-			$jExpPerHour = int($totalJobExp / $w_sec * 3600);
-			$zenyPerHour = int($zenyMade / $w_sec * 3600);
-			if ($char->{exp_max} && $bExpPerHour){
-				$percentB = "(".sprintf("%.2f",$totalBaseExp * 100 / $char->{exp_max})."%)";
-				$percentBhr = "(".sprintf("%.2f",$bExpPerHour * 100 / $char->{exp_max})."%)";
-				$EstB_sec = int(($char->{exp_max} - $char->{exp})/($bExpPerHour/3600));
-			}
-			if ($char->{exp_job_max} && $jExpPerHour){
-				$percentJ = "(".sprintf("%.2f",$totalJobExp * 100 / $char->{exp_job_max})."%)";
-				$percentJhr = "(".sprintf("%.2f",$jExpPerHour * 100 / $char->{exp_job_max})."%)";
-				$EstJ_sec = int(($char->{'exp_job_max'} - $char->{exp_job})/($jExpPerHour/3600));
-			}
-		}
-		$char->{deathCount} = 0 if (!defined $char->{deathCount});
-		message TF( "------------Exp Report------------\n" .
-					"Botting time : %s\n" .
-					"BaseExp      : %s %s\n" .
-					"JobExp       : %s %s\n" .
-					"BaseExp/Hour : %s %s\n" .
-					"JobExp/Hour  : %s %s\n" .
-					"zeny         : %s\n" .
-					"zeny/Hour    : %s\n" .
-					"Base Levelup Time Estimation : %s\n" .
-					"Job Levelup Time Estimation  : %s\n" .
-					"Died : %s\n" .
-					"Bytes Sent   : %s\n" .
-					"Bytes Rcvd   : %s\n",
-			timeConvert($w_sec), formatNumber($totalBaseExp), $percentB, formatNumber($totalJobExp), $percentJ,
-			formatNumber($bExpPerHour), $percentBhr, formatNumber($jExpPerHour), $percentJhr,
-			formatNumber($zenyMade), formatNumber($zenyPerHour), timeConvert($EstB_sec), timeConvert($EstJ_sec),
-			$char->{'deathCount'}, formatNumber($bytesSent), $packetParser && formatNumber($packetParser->{bytesProcessed})), "info";
-
-		if ($args[1] eq "") {
-			message("---------------------------------\n", "list");
-		}
-	}
 
 
 sub cmdGetPlayerInfo {
